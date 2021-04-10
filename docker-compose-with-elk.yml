@@ -1,0 +1,109 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.11.2
+    container_name: elasticsearch
+    restart: always
+    ports:
+      - 9200:9200
+    environment:
+      - "xpack.security.enabled=false"
+      - "discovery.type=single-node"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.11.2
+    container_name: kibana
+    restart: always
+    ports:
+      - 5601:5601
+    environment:
+      - "xpack.security.enabled=false"
+    depends_on:
+      - elasticsearch
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.11.2
+    container_name: logstash
+    restart: always
+    ports:
+      - 25826:25826
+    volumes:
+      - $PWD/elk-config:/elk-config
+    command: logstash -f /elk-config/logstash.config
+    depends_on:
+      - elasticsearch
+
+  task-mongodb:
+    image: mongo:latest
+    restart: always
+    container_name: mongo-task
+    volumes:
+      - task-volume:/data/taskdb
+    depends_on:
+      - logstash
+
+  account-mongodb:
+    image: mongo:latest
+    restart: always
+    container_name: mongo-account
+    volumes:
+      - account-volume:/data/accountdb
+    depends_on:
+      - logstash
+
+  config:
+    image: agomezuc96/config:latest
+    restart: always
+    container_name: config
+    environment:
+      - LOGSTASH_DESTINATION=logstash:25826
+      - LOGSTASH_ENABLED=true
+    depends_on:
+      - logstash
+
+  registry-service:
+    image: agomezuc96/registry-service:latest
+    restart: always
+    container_name: registry-service
+    environment:
+      - LOGSTASH_DESTINATION=logstash:25826
+      - LOGSTASH_ENABLED=true
+    ports:
+      - 8761:8761
+    depends_on:
+      - logstash
+      - config
+
+  task-service:
+    image: agomezuc96/task-service:latest
+    restart: always
+    container_name: task-service
+    environment:
+      - LOGSTASH_DESTINATION=logstash:25826
+      - LOGSTASH_ENABLED=true
+    ports:
+      - 8080:8080
+    depends_on:
+      - logstash
+      - task-mongodb
+      - registry-service
+      - config
+
+  account-service:
+    image: agomezuc96/account-service:latest
+    restart: always
+    container_name: account-service
+    environment:
+      - LOGSTASH_DESTINATION=logstash:25826
+      - LOGSTASH_ENABLED=true
+    ports:
+      - 8082:8082
+    depends_on:
+      - logstash
+      - account-mongodb
+      - registry-service
+      - config
+volumes:
+  task-volume:
+  account-volume:
+

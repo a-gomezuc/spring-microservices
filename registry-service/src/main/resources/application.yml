@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: registry-service
+  config:
+    import: optional:configserver:http://config:8888
+  cloud:
+    config:
+      fail-fast: true
+eureka:
+  client:
+    fetch-registry: false
+    register-with-eureka: false
+    server:
+      enable-self-preservation: false

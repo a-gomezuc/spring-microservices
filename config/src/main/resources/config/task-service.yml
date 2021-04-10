@@ -1,0 +1,9 @@
+spring:
+  data:
+    mongodb:
+      database: tasksdb
+      host: mongo-task
+      port: 27017
+
+server:
+  port: 8080
