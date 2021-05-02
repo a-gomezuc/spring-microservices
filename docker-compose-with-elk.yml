@@ -74,6 +74,19 @@ services:
       - logstash
       - config
 
+  gatway-service:
+    image: agomezuc96/gateway-service:latest
+    restart: always
+    container_name: gateway-service
+    environment:
+      - LOGSTASH_DESTINATION=logstash:25826
+      - LOGSTASH_ENABLED=true
+    ports:
+      - 8080:8080
+    depends_on:
+      - logstash
+      - config
+
   task-service:
     image: agomezuc96/task-service:latest
     restart: always
@@ -82,7 +95,7 @@ services:
       - LOGSTASH_DESTINATION=logstash:25826
       - LOGSTASH_ENABLED=true
     ports:
-      - 8080:8080
+      - 8081:8081
     depends_on:
       - logstash
       - task-mongodb
